@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "533174179382",
+    "project_id": "inbetween-e72db",
+    "storage_bucket": "inbetween-e72db.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:533174179382:android:16516b4270708dd689aa97",
+        "android_client_info": {
+          "package_name": "com.example.inbetween"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDkz4NmndUVnNqjpx_mB0jox8LxO2nx5QI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
