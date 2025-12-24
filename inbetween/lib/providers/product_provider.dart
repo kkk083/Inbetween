@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../models/product_model.dart';
+import '../models/user_model.dart'; // ✅ AJOUTÉ
 import '../services/firestore_service.dart';
 import '../services/storage_service.dart';
 
@@ -11,18 +12,21 @@ class ProductProvider extends ChangeNotifier {
   List<ProductModel> _products = [];
   List<ProductModel> _myProducts = [];
   ProductModel? _selectedProduct;
+  UserModel? _selectedProductSeller; // ✅ AJOUTÉ
   bool _isLoading = false;
   String? _errorMessage;
   
   List<ProductModel> get products => _products;
   List<ProductModel> get myProducts => _myProducts;
   ProductModel? get selectedProduct => _selectedProduct;
+  UserModel? get selectedProductSeller => _selectedProductSeller; // ✅ AJOUTÉ
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   
   Future<bool> createProduct({
     required String sellerId,
     required String sellerName,
+    required String sellerPhone,
     required String title,
     required String description,
     required double price,
@@ -47,6 +51,7 @@ class ProductProvider extends ChangeNotifier {
         id: '',
         sellerId: sellerId,
         sellerName: sellerName,
+        sellerPhone: sellerPhone,
         title: title,
         description: description,
         price: price,
@@ -90,6 +95,12 @@ class ProductProvider extends ChangeNotifier {
     
     try {
       _selectedProduct = await _firestoreService.getProductById(productId);
+      
+      // ✅ NOUVEAU : Charger aussi les infos du vendeur
+      if (_selectedProduct != null) {
+        _selectedProductSeller = await _firestoreService.getUserById(_selectedProduct!.sellerId);
+      }
+      
       _isLoading = false;
       notifyListeners();
     } catch (e) {

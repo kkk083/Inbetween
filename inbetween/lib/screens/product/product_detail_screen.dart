@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/product_provider.dart';
 import '../../models/product_model.dart';
@@ -33,6 +34,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   Future<void> _callSeller(String phoneNumber) async {
+    if (phoneNumber.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Numéro de téléphone non disponible')),
+        );
+      }
+      return;
+    }
+
     final Uri url = Uri.parse('tel:$phoneNumber');
     if (await canLaunchUrl(url)) {
       await launchUrl(url);
@@ -46,6 +56,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   Future<void> _whatsappSeller(String phoneNumber, String productTitle) async {
+    if (phoneNumber.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Numéro de téléphone non disponible')),
+        );
+      }
+      return;
+    }
+
     final cleanNumber = phoneNumber.replaceAll(RegExp(r'\D'), '');
     final whatsappNumber = cleanNumber.startsWith('230') ? cleanNumber : '230$cleanNumber';
     
@@ -79,6 +98,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     }
 
     final product = productProvider.selectedProduct;
+    final seller = productProvider.selectedProductSeller; // ✅ NOUVEAU
 
     if (product == null) {
       return Scaffold(
@@ -108,11 +128,27 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         return Image.network(
                           product.imageUrls[index],
                           fit: BoxFit.cover,
+                          cacheWidth: 1080,
+                          cacheHeight: 1920,
                           errorBuilder: (context, error, stackTrace) {
                             return Container(
                               color: Colors.grey[300],
                               child: const Center(
                                 child: Icon(Icons.broken_image, size: 80),
+                              ),
+                            );
+                          },
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Container(
+                              color: Colors.grey[200],
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  value: loadingProgress.expectedTotalBytes != null
+                                      ? loadingProgress.cumulativeBytesLoaded /
+                                          loadingProgress.expectedTotalBytes!
+                                      : null,
+                                ),
                               ),
                             );
                           },
@@ -244,7 +280,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     subtitle: const Text('Membre Inbetween'),
                   ),
 
-                  const SizedBox(height: 80),
+                  const SizedBox(height: 100),
                 ],
               ),
             ),
@@ -254,7 +290,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
       bottomNavigationBar: isMyProduct
           ? _buildOwnerActions(product)
-          : _buildBuyerActions(product, authProvider),
+          : _buildBuyerActions(product, seller), // ✅ MODIFIÉ
     );
   }
 
@@ -291,8 +327,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(0.08),
             blurRadius: 10,
+            offset: const Offset(0, -2),
           ),
         ],
       ),
@@ -300,7 +337,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // ✅ Bouton Modifier
             Row(
               children: [
                 Expanded(
@@ -314,7 +350,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       );
                       
                       if (result == true && mounted) {
-                        // Recharger le produit
                         productProvider.loadProduct(product.id);
                       }
                     },
@@ -414,8 +449,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     );
   }
 
-  Widget _buildBuyerActions(ProductModel product, AuthProvider authProvider) {
-    final sellerPhone = authProvider.currentUser?.phoneNumber ?? '';
+  Widget _buildBuyerActions(ProductModel product, seller) { // ✅ MODIFIÉ
+    // ✅ NOUVEAU : Récupère le numéro depuis le vendeur (UserModel)
+    final sellerPhone = seller?.phoneNumber ?? product.sellerPhone ?? '';
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -423,27 +459,91 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(0.08),
             blurRadius: 10,
+            offset: const Offset(0, -2),
           ),
         ],
       ),
       child: SafeArea(
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Expanded(
-              child: OutlinedButton.icon(
+            // Bouton Appeler
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton(
                 onPressed: () => _callSeller(sellerPhone),
-                icon: const Icon(Icons.phone),
-                label: const Text('Appeler'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppConstants.primaryColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 2,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.phone, color: Colors.white, size: 24),
+                    const SizedBox(width: 12),
+                    Text(
+                      sellerPhone.isEmpty ? 'Appeler le vendeur' : sellerPhone,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: ElevatedButton.icon(
+
+            const SizedBox(height: 12),
+
+            // Bouton WhatsApp
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: OutlinedButton(
                 onPressed: () => _whatsappSeller(sellerPhone, product.title),
-                icon: const Icon(Icons.chat),
-                label: const Text('WhatsApp'),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Color(0xFF25D366), width: 2),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: const [
+                    FaIcon(
+                      FontAwesomeIcons.whatsapp,
+                      color: Color(0xFF25D366),
+                      size: 28,
+                    ),
+                    SizedBox(width: 12),
+                    Text(
+                      'Contacter via WhatsApp',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF25D366),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            // Nom du vendeur
+            Text(
+              'Vendeur : ${product.sellerName}',
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey.shade600,
               ),
             ),
           ],

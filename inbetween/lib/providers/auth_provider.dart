@@ -56,7 +56,7 @@ class AuthProvider extends ChangeNotifier {
       return true;
       
     } catch (e) {
-      _errorMessage = e.toString();
+      _errorMessage = _formatError(e);
       _isLoading = false;
       notifyListeners();
       return false;
@@ -83,10 +83,28 @@ class AuthProvider extends ChangeNotifier {
       return true;
       
     } catch (e) {
-      _errorMessage = e.toString();
+      _errorMessage = _formatError(e);
       _isLoading = false;
       notifyListeners();
       return false;
+    }
+  }
+
+  // 🔑 MOT DE PASSE OUBLIÉ (NOUVEAU)
+  Future<void> resetPassword(String email) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    
+    try {
+      await _authService.sendPasswordResetEmail(email);
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      _errorMessage = _formatError(e);
+      _isLoading = false;
+      notifyListeners();
+      rethrow; // On renvoie l'erreur pour que le dialogue puisse l'afficher
     }
   }
   
@@ -117,7 +135,6 @@ class AuthProvider extends ChangeNotifier {
         profilePicUrl: profilePicUrl,
       );
       
-      // Recharger les données du user
       _currentUser = await _authService.getCurrentUserData();
       
       _isLoading = false;
@@ -125,14 +142,23 @@ class AuthProvider extends ChangeNotifier {
       return true;
       
     } catch (e) {
-      _errorMessage = e.toString();
+      _errorMessage = _formatError(e);
       _isLoading = false;
       notifyListeners();
       return false;
     }
   }
-  
-  // Effacer les erreurs
+
+  // Formater les messages d'erreur Firebase pour qu'ils soient propres
+  String _formatError(dynamic e) {
+    String msg = e.toString();
+    if (msg.contains('user-not-found')) return "Aucun utilisateur trouvé avec cet email.";
+    if (msg.contains('wrong-password')) return "Mot de passe incorrect.";
+    if (msg.contains('email-already-in-use')) return "Cet email est déjà utilisé.";
+    if (msg.contains('invalid-email')) return "L'adresse email n'est pas valide.";
+    return "Une erreur est survenue. Veuillez réessayer.";
+  }
+
   void clearError() {
     _errorMessage = null;
     notifyListeners();

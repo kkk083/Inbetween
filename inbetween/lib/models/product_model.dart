@@ -1,20 +1,22 @@
 class ProductModel {
   final String id;
-  final String sellerId; // ID du vendeur
-  final String sellerName; // Nom du vendeur (pour affichage rapide)
+  final String sellerId;
+  final String sellerName;
+  final String? sellerPhone; 
   final String title;
   final String description;
   final double price;
   final String category;
   final String condition;
-  final List<String> imageUrls; // Plusieurs images possibles
-  final bool isAvailable; // Produit encore dispo ou vendu
+  final List<String> imageUrls;
+  final bool isAvailable;
   final DateTime createdAt;
   
   ProductModel({
     required this.id,
     required this.sellerId,
     required this.sellerName,
+    this.sellerPhone, 
     required this.title,
     required this.description,
     required this.price,
@@ -30,6 +32,7 @@ class ProductModel {
       id: id,
       sellerId: map['sellerId'] ?? '',
       sellerName: map['sellerName'] ?? '',
+      sellerPhone: map['sellerPhone'], 
       title: map['title'] ?? '',
       description: map['description'] ?? '',
       price: (map['price'] ?? 0).toDouble(),
@@ -45,6 +48,7 @@ class ProductModel {
     return {
       'sellerId': sellerId,
       'sellerName': sellerName,
+      'sellerPhone': sellerPhone, 
       'title': title,
       'description': description,
       'price': price,

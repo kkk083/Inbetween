@@ -96,6 +96,19 @@ class AuthService {
       throw 'Impossible de récupérer les données utilisateur';
     }
   }
+
+  
+  // 🔑 Envoyer l'email de réinitialisation
+  Future<void> sendPasswordResetEmail(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+    } on FirebaseAuthException catch (e) {
+      throw _handleAuthException(e); // Utilise ta gestion d'erreur si tu en as une
+    } catch (e) {
+      throw "Une erreur inconnue est survenue";
+    }
+  }
+
   
   Future<void> updateProfile({
     String? name,

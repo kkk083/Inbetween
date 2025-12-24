@@ -9,7 +9,7 @@ import '../../utils/constants.dart';
 import '../../utils/image_helper.dart';
 
 class AddProductScreen extends StatefulWidget {
-  final VoidCallback? onProductAdded; // ✅ NOUVEAU: Callback pour notifier le parent
+  final VoidCallback? onProductAdded;
   
   const AddProductScreen({super.key, this.onProductAdded});
 
@@ -108,23 +108,21 @@ class _AddProductScreenState extends State<AddProductScreen> {
       final productProvider = Provider.of<ProductProvider>(context, listen: false);
 
       List<File> imageFiles = _selectedImages.map((xFile) => File(xFile.path)).toList();
-
-      // ✅ NOUVEAU : Compresse les images AVANT l'upload
       List<File> compressedFiles = await ImageHelper.compressImages(imageFiles);
 
       bool success = await productProvider.createProduct(
         sellerId: authProvider.currentUser!.id,
         sellerName: authProvider.currentUser!.name,
+        sellerPhone: authProvider.currentUser!.phoneNumber, // ✅ NOUVEAU
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim(),
         price: double.parse(_priceController.text.trim()),
         category: _selectedCategory,
         condition: _selectedCondition,
-        images: compressedFiles, // ✅ Utilise les images compressées
+        images: compressedFiles,
       );
 
       if (success && mounted) {
-        // ✅ Reset le formulaire IMMÉDIATEMENT
         _titleController.clear();
         _descriptionController.clear();
         _priceController.clear();
@@ -135,7 +133,6 @@ class _AddProductScreenState extends State<AddProductScreen> {
           _isUploading = false;
         });
         
-        // ✅ Affiche le succès
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('✅ Produit publié avec succès !'),
@@ -144,11 +141,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
           ),
         );
         
-        // ✅ Attends 500ms puis appelle le callback
         await Future.delayed(const Duration(milliseconds: 500));
         
         if (mounted && widget.onProductAdded != null) {
-          widget.onProductAdded!(); // Notifie le parent (HomeScreen)
+          widget.onProductAdded!();
         }
         
       } else if (mounted) {
